@@ -33,13 +33,13 @@ void createGraphs(int *a, int *b, int n, int m) {
 int CC;
 
 void dfs(Graph G, int node, bool *visited, stack<int> &stack) {
-    stack.push(node);
     SCC[node] = CC;
     visited[node] = true;
     for (auto it = G.adj[node].begin(); it != G.adj[node].end(); it++) {
         if (!visited[*it])
             dfs(G, *it, visited, stack);
     }
+    stack.push(node);
 }
 
 
@@ -53,23 +53,19 @@ void findSCCs(int n) {
         if (!visited[i])
             dfs(graph, i, visited, s1);
     }
-    stack<int> stack2;
-    for (int i = 0; i < n; ++i) {
-        stack2.push(s1.top());
-        s1.pop();
-    }
+    stack<int> s2;
     for (int i = 0; i < n; ++i) {
         visited[i] = false;
         SCC[i] = -1;
     }
     CC = 0;
-    while (!stack2.empty()) {
-        if (visited[stack2.top()]) {
-            stack2.pop();
+    while (!s1.empty()) {
+        if (visited[s1.top()]) {
+            s1.pop();
             continue;
         }
-        dfs(invGraph, stack2.top(), visited, s1);
-        stack2.pop();
+        dfs(invGraph, s1.top(), visited, s2);
+        s1.pop();
         CC++;
     }
     free(visited);
