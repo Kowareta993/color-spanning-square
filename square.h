@@ -13,7 +13,7 @@ typedef struct Point {
 } Point;
 
 typedef struct {
-    Point corner; //bottom left
+    Point corner;
     double d;   //side
 } Square;
 

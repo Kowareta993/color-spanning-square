@@ -1,7 +1,7 @@
 #include "square.h"
 #include "SAT2.h"
 #include <bits/stdc++.h>
-#include <cstdlib>
+#include "sorted_matrix.h"
 
 struct SAT2 {
     int *a;
@@ -98,25 +98,43 @@ SAT2 map_to_2SAT(Pair *pairs, int n, double d) {
     return sat2;
 }
 
+int mat_n;
+int mat_idx;
 
-Square binary_search(double *arr, Pair *pairs, int n, int rank_s, int rank_e) {
+double implicit_matrix(long i, long j) {
+    if (i >= mat_n || j >= mat_n)
+        return INT_MAX;
+    if (i > mat_n - j - 1)
+        return sorted_points[mat_idx][i].p[mat_idx] - sorted_points[mat_idx][mat_n - j - 1].p[mat_idx];
+    return 0;
+}
+
+
+Square binary_search(Pair *pairs, int n, int rank_s, int rank_e) {
     int rank_m = (rank_e + rank_s) / 2;
     if (rank_m == rank_s) {
-        SAT2 sat2 = map_to_2SAT(pairs, n, arr[rank_e]);
+        Cell cell = select(&implicit_matrix, 2 * n, 2 * n, rank_m + 1);
+        double d = implicit_matrix(cell.i, cell.j);
+        SAT2 sat2 = map_to_2SAT(pairs, n, d);
         bool satisfied = satisfiable(sat2.a, sat2.b, sat2.n, sat2.m);
-        if (satisfied) return Square{Point{0, 0}, arr[rank_e]};
-         return Square{Point{0, 0}, -1};
+        delete[] sat2.a;
+        delete[] sat2.b;
+        if (satisfied) return Square{sorted_points[mat_idx][cell.i], d};
+        cell = select(&implicit_matrix, 2 * n, 2 * n, rank_e + 1);
+        d = implicit_matrix(cell.i, cell.j);
+        return Square{sorted_points[mat_idx][cell.i], d};
     }
-    double d = arr[rank_m];
+    Cell cell = select(&implicit_matrix, 2 * n, 2 * n, rank_m + 1);
+    double d = implicit_matrix(cell.i, cell.j);
 //    cout << d << endl;
     SAT2 sat2 = map_to_2SAT(pairs, n, d);
     bool satisfied = satisfiable(sat2.a, sat2.b, sat2.n, sat2.m);
 //    cout << satisfied << endl;
-    free(sat2.a);
-    free(sat2.b);
+    delete[] sat2.a;
+    delete[] sat2.b;
     if (satisfied)
-        return binary_search(arr, pairs, n, rank_s, rank_m);
-    return binary_search(arr, pairs, n, rank_m, rank_e);
+        return binary_search(pairs, n, rank_s, rank_m);
+    return binary_search(pairs, n, rank_m, rank_e);
 }
 
 
@@ -146,20 +164,19 @@ Square smallest_square(Pair *pairs, int n) {
     Square best;
     best.d = -1;
     for (int i = 0; i < dim; ++i) {
-        double *arr = new double[4 * n * n];
-        for (int j = 0; j < 2 * n; ++j) {
-            for (int k = 0; k < 2 * n; ++k) {
-                arr[j * 2 * n + k] = abs(sorted_points[i][j].p[i] - sorted_points[i][k].p[i]);
-            }
-        }
-        sort(arr, arr + 4 * n * n);
-        Square smallest = binary_search(arr, pairs, n, 0, 4 * n * n - 1);
+        mat_idx = i;
+        mat_n = 2 * n;
+        Square smallest = binary_search(pairs, n, 0, 4 * n * n - 1);
 //        cout << "d" << smallest.d << endl;
         if (smallest.d == -1)
             continue;
         if (smallest.d < best.d || best.d == -1)
             best = smallest;
-        free(arr);
     }
+    for (int i = 0; i < dim; ++i) {
+        delete[] sorted_points[i];
+    }
+    delete[] sorted_points;
+    delete[] points;
     return best;
 }

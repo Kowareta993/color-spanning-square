@@ -4,8 +4,10 @@
 #include <chrono>
 #include <fstream>
 #include <vector>
+#include <bits/stdc++.h>
 #include "SAT2.h"
 #include "square.h"
+#include "sorted_matrix.h"
 
 
 using namespace std;
@@ -13,19 +15,25 @@ using namespace std::chrono;
 
 void SAT2_validation(int);
 
-void SAT2_timing();
+void SAT2_timing(int);
 
 void Square_validation(int);
 
-void Square_timing();
+void Square_timing(int);
+
+void Select_validation(int);
+
+void Select_timing(int);
 
 int main(int argc, char *argv[]) {
     srand(time(nullptr));
     if (argc > 1) {
         SAT2_validation(1000);
-        SAT2_timing();
+        SAT2_timing(10);
+        Select_validation(1000);
+        Select_timing(10);
         Square_validation(1000);
-        Square_timing();
+        Square_timing(10);
         return 0;
     }
     int n, dim;
@@ -62,29 +70,33 @@ int *random_arr(int size, int min, int max) {
     return arr;
 }
 
-void SAT2_timing() {
+void SAT2_timing(int trials) {
     ofstream stream("analysis/SAT2_timing.csv");
     stream << 'n' << "," << 't' << endl;
     for (int t = 10; t < 1000 * 1000; t *= 10) {
         for (int n = t; n < t * 10; n += t) {
-            int m = n;
-            int *a = random_arr(m, -n, n);
-            int *b = random_arr(m, -n, n);
-            for (int j = 0; j < m; ++j) {
-                if (a[j] == 0)
-                    a[j] = 1;
-                if (b[j] == 0)
-                    b[j] = 1;
+            long x = 0;
+            for (int i = 0; i < trials; ++i) {
+                int m = n;
+                int *a = random_arr(m, -n, n);
+                int *b = random_arr(m, -n, n);
+                for (int j = 0; j < m; ++j) {
+                    if (a[j] == 0)
+                        a[j] = 1;
+                    if (b[j] == 0)
+                        b[j] = 1;
+                }
+                auto start = high_resolution_clock::now();
+                satisfiable(a, b, n, m);
+                auto stop = high_resolution_clock::now();
+                x += duration_cast<microseconds>(stop - start).count();
+                delete[] a;
+                delete[] b;
             }
-            auto start = high_resolution_clock::now();
-            satisfiable(a, b, n, m);
-            auto stop = high_resolution_clock::now();
-            auto duration = duration_cast<microseconds>(stop - start);
-            free(a);
-            free(b);
-            stream << n << "," << duration.count() << endl;
+            stream << n << "," << x / trials << endl;
         }
     }
+    stream.close();
     cout << "SAT-2 timing finished" << endl;
 }
 
@@ -125,7 +137,7 @@ void SAT2_validation(int trials) {
             vars[j] = false;
         }
         bool x2 = SAT2_bf(a, b, n, m, vars, 0);
-        free(vars);
+        delete[] vars;
         if (x1 != x2) {
             cout << "SAT-2 Validation failed" << endl;
             cout << x1 << x2 << endl;
@@ -133,8 +145,12 @@ void SAT2_validation(int trials) {
                 cout << a[j] << "v" << b[j] << "^";
             }
             cout << endl;
+            delete[] a;
+            delete[] b;
             return;
         }
+        delete[] a;
+        delete[] b;
     }
     cout << "SAT-2 Validation passed" << endl;
 }
@@ -179,32 +195,20 @@ Pair *randomPairs(int n, int dim) {
         for (int k = 0; k < n; ++k) {
             pairs[k].p.p[j] = 1.0 * a[2 * k] / (b[2 * k] + 0.1);
             pairs[k].q.p[j] = 1.0 * a[2 * k + 1] / (b[2 * k + 1] + 0.1);
-//                pairs[k].p.p[j] = a[k];
-//                pairs[k].q.p[j] = b[k];
+//            pairs[k].p.p[j] = a[k];
+//            pairs[k].q.p[j] = b[k];
         }
-        free(a);
-        free(b);
+        delete[] a;
+        delete[] b;
     }
     return pairs;
 }
 
 void Square_validation(int trials) {
     int n = 10;
-    int dim = 3;
+    int dim = 1;
     for (int i = 0; i < trials; ++i) {
         Pair *pairs = randomPairs(n, dim);
-        for (int j = 0; j < dim; ++j) {
-            int *a = random_arr(2 * n, -10, 10);
-            int *b = random_arr(2 * n, -10, 10);
-            for (int k = 0; k < n; ++k) {
-                pairs[k].p.p[j] = 1.0 * a[2 * k] / (b[2 * k] + 0.1);
-                pairs[k].q.p[j] = 1.0 * a[2 * k + 1] / (b[2 * k + 1] + 0.1);
-//                pairs[k].p.p[j] = a[k];
-//                pairs[k].q.p[j] = b[k];
-            }
-            free(a);
-            free(b);
-        }
         vector<Point> p;
         double d1 = Square_bf(pairs, n, p, 0, dim);
         double d2 = smallest_square(pairs, n).d;
@@ -222,36 +226,149 @@ void Square_validation(int trials) {
                 cout << endl;
             }
             for (int j = 0; j < n; ++j) {
-                free(pairs[j].p.p);
-                free(pairs[j].q.p);
+                delete[] pairs[j].p.p;
+                delete[] pairs[j].q.p;
             }
-            free(pairs);
+            delete[] pairs;
             return;
         }
+        for (int j = 0; j < n; ++j) {
+            delete[] pairs[j].p.p;
+            delete[] pairs[j].q.p;
+        }
+        delete[] pairs;
     }
     cout << "Square Validation passed" << endl;
 }
 
-void Square_timing() {
+void Square_timing(int trials) {
     ofstream stream("analysis/Square_timing.csv");
     stream << "n,dim,t" << endl;
-    for (int t = 10; t < 1000 * 1; t *= 10) {
+    for (int t = 10; t < 1000 * 1000; t *= 10) {
         for (int n = t; n < t * 10; n += t) {
             for (int d = 1; d < 5; ++d) {
-                Pair *pairs = randomPairs(n, d);
-                auto start = high_resolution_clock::now();
-                smallest_square(pairs, n);
-                auto stop = high_resolution_clock::now();
-                auto duration = duration_cast<microseconds>(stop - start);
-                for (int i = 0; i < n; ++i) {
-                    free(pairs[i].p.p);
-                    free(pairs[i].q.p);
+                long x = 0;
+                for (int i = 0; i < trials; ++i) {
+                    Pair *pairs = randomPairs(n, d);
+                    auto start = high_resolution_clock::now();
+                    smallest_square(pairs, n);
+                    auto stop = high_resolution_clock::now();
+                    x += duration_cast<microseconds>(stop - start).count();
+                    for (int i = 0; i < n; ++i) {
+                        delete[]pairs[i].p.p;
+                        delete[]pairs[i].q.p;
+                    }
+                    delete[] pairs;
                 }
-                free(pairs);
-                stream << n << "," << d << "," << duration.count() << endl;
+
+                stream << n << "," << d << "," << x / trials << endl;
             }
 
         }
     }
+    stream.close();
     cout << "Square timing finished" << endl;
+}
+
+int **matrix;
+int m, n;
+
+double mat1(long i, long j) {
+    if (i >= n || i < 0)
+        return INT_MAX;
+    if (j >= m || j < 0)
+        return INT_MAX;
+    return matrix[i][j];
+}
+
+void random_sorted_matrix(int n, int m) {
+    matrix = new int *[n];
+    for (int j = 0; j < n; ++j) {
+        matrix[j] = random_arr(m, -100, 100);
+        sort(matrix[j], matrix[j] + m);
+    }
+    for (int j = 0; j < m; ++j) {
+        int *col = new int[n];
+        for (int k = 0; k < n; ++k) {
+            col[k] = matrix[k][j];
+        }
+        sort(col, col + n);
+        for (int k = 0; k < n; ++k) {
+            matrix[k][j] = col[k];
+        }
+        delete[] col;
+    }
+
+
+}
+
+void Select_validation(int trials) {
+    for (int i = 0; i < trials; ++i) {
+        m = rand() % 100 + 1;
+        n = rand() % 100 + 1;
+        random_sorted_matrix(n, m);
+        int k = rand() % (n * m);
+        Cell cell = select(&mat1, n, m, k + 1);
+        double a = mat1(cell.i, cell.j);
+        double *mat = new double[n * m];
+        for (int j = 0; j < n; ++j) {
+            for (int k = 0; k < m; ++k) {
+                mat[j * m + k] = matrix[j][k];
+            }
+        }
+        sort(mat, mat + n * m);
+        double b = mat[k];
+        delete[] mat;
+        if (abs(b - a) > 0.0001) {
+            cout << "Select Validation failed" << endl;
+            cout << a << " " << b << endl;
+            cout << k << endl;
+            for (int j = 0; j < n; ++j) {
+                for (int l = 0; l < m; ++l) {
+                    cout << matrix[j][l] << " ";
+                }
+                cout << endl;
+            }
+            for (int j = 0; j < n; ++j) {
+                delete[] matrix[j];
+
+            }
+            delete[] matrix;
+
+            return;
+        }
+        for (int j = 0; j < n; ++j) {
+            delete[] matrix[j];
+
+        }
+        delete[] matrix;
+    }
+
+
+    cout << "Select Validation passed" << endl;
+}
+
+double mat2(long i, long j) {
+    return i + j;
+}
+
+void Select_timing(int trials) {
+    ofstream stream("analysis/Select_timing.csv");
+    stream << "n,t" << endl;
+    for (int t = 10; t < 1000 * 1000; t *= 10) {
+        for (long n = t; n < t * 10; n += t) {
+            long x = 0;
+            for (int i = 0; i < trials; ++i) {
+                long k = rand() % min(n * n, 1000L);
+                auto start = high_resolution_clock::now();
+                select(&mat2, n, n, k + 1);
+                auto stop = high_resolution_clock::now();
+                x += duration_cast<microseconds>(stop - start).count();
+            }
+
+            stream << n << "," << x / trials << endl;
+        }
+    }
+    stream.close();
+    cout << "Select timing finished" << endl;
 }

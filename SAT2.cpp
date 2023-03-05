@@ -3,10 +3,21 @@
 #include <stack>
 #include <iostream>
 
-typedef struct {
-    list<int> *adj;
-} Graph;
+typedef struct Node {
+    int val;
+    Node *next = nullptr;
+    Node *prev = nullptr;
+} Node;
 
+typedef struct List {
+    Node *head = nullptr;
+    Node *tail = nullptr;
+} List;
+
+typedef struct {
+    List *adj;
+    int size;
+} Graph;
 Graph graph, invGraph;
 int *SCC;
 
@@ -16,17 +27,36 @@ int index(int i) {
     return i * 2 - 2;
 }
 
+void insert(List *list, int val) {
+    Node *node = new Node{};
+    node->val = val;
+    if (list->head == nullptr) {
+        list->head = node;
+        list->tail = node;
+        return;
+    }
+    list->tail->next = node;
+    node->prev = list->tail;
+    list->tail = node;
+}
+
+void freeList(List *list) {
+    Node *node = list->head;
+    while (node != nullptr) {
+        Node *next = node->next;
+        delete node;
+        node = next;
+    }
+}
 
 void createGraphs(int *a, int *b, int n, int m) {
-    graph = Graph{};
-    graph.adj = new list<int>[2 * n];
-    invGraph = Graph{};
-    invGraph.adj = new list<int>[2 * n];
+    graph = Graph{new List[2 * n], 2 * n};
+    invGraph = Graph{new List[2 * n], 2 * n};
     for (int i = 0; i < m; i++) {
-        graph.adj[index(-a[i])].push_back(index(b[i]));
-        graph.adj[index(-b[i])].push_back(index(a[i]));
-        invGraph.adj[index(b[i])].push_back(index(-a[i]));
-        invGraph.adj[index(a[i])].push_back(index(-b[i]));
+        insert(&graph.adj[index(-a[i])], index(b[i]));
+        insert(&graph.adj[index(-b[i])], index(a[i]));
+        insert(&invGraph.adj[index(b[i])], index(-a[i]));
+        insert(&invGraph.adj[index(a[i])], index(-b[i]));
     }
 }
 
@@ -35,9 +65,9 @@ int CC;
 void dfs(Graph G, int node, bool *visited, stack<int> &stack) {
     SCC[node] = CC;
     visited[node] = true;
-    for (auto it = G.adj[node].begin(); it != G.adj[node].end(); it++) {
-        if (!visited[*it])
-            dfs(G, *it, visited, stack);
+    for (auto it = G.adj[node].head; it != nullptr; it = it->next) {
+        if (!visited[it->val])
+            dfs(G, it->val, visited, stack);
     }
     stack.push(node);
 }
@@ -68,13 +98,18 @@ void findSCCs(int n) {
         s1.pop();
         CC++;
     }
-    free(visited);
+    delete[] visited;
 }
 
 void deallocate() {
-    free(SCC);
-//    free(graph.adj);
-//    free(invGraph.adj);
+    delete[] SCC;
+    for (int i = 0; i < graph.size; ++i) {
+        freeList(&graph.adj[i]);
+        freeList(&invGraph.adj[i]);
+    }
+    delete[] graph.adj;
+    delete[] invGraph.adj;
+
 }
 
 bool satisfiable(int *a, int *b, int n, int m) {
