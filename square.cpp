@@ -110,7 +110,7 @@ double implicit_matrix(long i, long j) {
 }
 
 
-Square binary_search(Pair *pairs, int n, int rank_s, int rank_e) {
+double binary_search(Pair *pairs, int n, int rank_s, int rank_e) {
     int rank_m = (rank_e + rank_s) / 2;
     if (rank_m == rank_s) {
         Cell cell = select(&implicit_matrix, 2 * n, 2 * n, rank_m + 1);
@@ -119,10 +119,15 @@ Square binary_search(Pair *pairs, int n, int rank_s, int rank_e) {
         bool satisfied = satisfiable(sat2.a, sat2.b, sat2.n, sat2.m);
         delete[] sat2.a;
         delete[] sat2.b;
-        if (satisfied) return Square{sorted_points[mat_idx][cell.i], d};
+        if (satisfied) return d;
         cell = select(&implicit_matrix, 2 * n, 2 * n, rank_e + 1);
         d = implicit_matrix(cell.i, cell.j);
-        return Square{sorted_points[mat_idx][cell.i], d};
+        sat2 = map_to_2SAT(pairs, n, d);
+        satisfied = satisfiable(sat2.a, sat2.b, sat2.n, sat2.m);
+        delete[] sat2.a;
+        delete[] sat2.b;
+        if (satisfied) return d;
+        return -1;
     }
     Cell cell = select(&implicit_matrix, 2 * n, 2 * n, rank_m + 1);
     double d = implicit_matrix(cell.i, cell.j);
@@ -145,7 +150,7 @@ bool compare(Point a, Point b) {
 }
 
 
-Square smallest_square(Pair *pairs, int n) {
+double smallest_square(Pair *pairs, int n) {
     int dim = pairs[0].p.dim;
     Point *points = new Point[2 * n];
     for (int i = 0; i < n; ++i) {
@@ -161,16 +166,14 @@ Square smallest_square(Pair *pairs, int n) {
         idx = i;
         sort(sorted_points[i], sorted_points[i] + 2 * n, compare);
     }
-    Square best;
-    best.d = -1;
+    double best = -1;
     for (int i = 0; i < dim; ++i) {
         mat_idx = i;
         mat_n = 2 * n;
-        Square smallest = binary_search(pairs, n, 0, 4 * n * n - 1);
-//        cout << "d" << smallest.d << endl;
-        if (smallest.d == -1)
+        double smallest = binary_search(pairs, n, 0, 4 * n * n - 1);
+        if (smallest == -1)
             continue;
-        if (smallest.d < best.d || best.d == -1)
+        if (smallest < best || best == -1)
             best = smallest;
     }
     for (int i = 0; i < dim; ++i) {

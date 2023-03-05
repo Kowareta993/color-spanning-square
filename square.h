@@ -13,15 +13,10 @@ typedef struct Point {
 } Point;
 
 typedef struct {
-    Point corner;
-    double d;   //side
-} Square;
-
-typedef struct {
     Point p;
     Point q;
 } Pair;
 
-Square smallest_square(Pair *pairs, int n);
+double smallest_square(Pair *pairs, int n);
 
 #endif

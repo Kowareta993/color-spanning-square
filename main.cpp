@@ -25,9 +25,13 @@ void Select_validation(int);
 
 void Select_timing(int);
 
+Pair *randomPairs(int, int);
+
+void save(Pair *, int);
+
 int main(int argc, char *argv[]) {
     srand(time(nullptr));
-    if (argc > 1) {
+    if (argc == 1) {
         SAT2_validation(1000);
         SAT2_timing(10);
         Select_validation(1000);
@@ -37,29 +41,35 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     int n, dim;
-    cin >> n >> dim;
-    Pair *pairs = new Pair[n];
-    int id = 1;
-    for (int i = 0; i < n; ++i) {
-        Point p, q;
-        p.p = new double[dim];
-        q.p = new double[dim];
-        p.dim = dim;
-        q.dim = dim;
-        p.id = id++;
-        q.id = id++;
-        for (int j = 0; j < dim; ++j) {
-            cin >> p.p[j];
-        }
-        for (int j = 0; j < dim; ++j) {
-            cin >> q.p[j];
-        }
-        cin >> p.color;
-        q.color = p.color;
-        pairs[i].p = p;
-        pairs[i].q = q;
+    if (argc != 3)
+        return -1;
+    n = atoi(argv[1]);
+    dim = atoi(argv[2]);
+    Pair *pairs = randomPairs(n, dim);
+    save(pairs, n);
+    double result = smallest_square(pairs, n);
+    delete[] pairs;
+    cout << result << endl;
+}
+
+void save(Pair *pairs, int n) {
+    ofstream stream("result/points.csv");
+    int dim = pairs[0].p.dim;
+    for (int i = 0; i < dim; ++i) {
+        stream << "dim" << i << ",";
     }
-    cout << smallest_square(pairs, n).d << endl;
+    stream << "color" << endl;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < dim; ++j) {
+            stream << pairs[i].p.p[j] << ",";
+        }
+        stream << pairs[i].p.color << endl;
+        for (int j = 0; j < dim; ++j) {
+            stream << pairs[i].q.p[j] << ",";
+        }
+        stream << pairs[i].q.color << endl;
+    }
+    stream.close();
 }
 
 int *random_arr(int size, int min, int max) {
@@ -190,8 +200,8 @@ Pair *randomPairs(int n, int dim) {
         pairs[k].q.p = new double[dim];
     }
     for (int j = 0; j < dim; ++j) {
-        int *a = random_arr(2 * n, -10, 10);
-        int *b = random_arr(2 * n, -10, 10);
+        int *a = random_arr(2 * n, -100, 100);
+        int *b = random_arr(2 * n, -100, 100);
         for (int k = 0; k < n; ++k) {
             pairs[k].p.p[j] = 1.0 * a[2 * k] / (b[2 * k] + 0.1);
             pairs[k].q.p[j] = 1.0 * a[2 * k + 1] / (b[2 * k + 1] + 0.1);
@@ -206,12 +216,12 @@ Pair *randomPairs(int n, int dim) {
 
 void Square_validation(int trials) {
     int n = 10;
-    int dim = 1;
+    int dim = 3;
     for (int i = 0; i < trials; ++i) {
         Pair *pairs = randomPairs(n, dim);
         vector<Point> p;
         double d1 = Square_bf(pairs, n, p, 0, dim);
-        double d2 = smallest_square(pairs, n).d;
+        double d2 = smallest_square(pairs, n);
         if (abs(d1 - d2) > 0.0001) {
             cout << "Square Validation failed" << endl;
             cout << d1 << " " << d2 << endl;
@@ -372,3 +382,4 @@ void Select_timing(int trials) {
     stream.close();
     cout << "Select timing finished" << endl;
 }
+
