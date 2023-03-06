@@ -113,15 +113,13 @@ double implicit_matrix(long i, long j) {
 double binary_search(Pair *pairs, int n, int rank_s, int rank_e) {
     int rank_m = (rank_e + rank_s) / 2;
     if (rank_m == rank_s) {
-        Cell cell = select(&implicit_matrix, 2 * n, 2 * n, rank_m + 1);
-        double d = implicit_matrix(cell.i, cell.j);
+        double d = select(&implicit_matrix, 2 * n, 2 * n, rank_m + 1);
         SAT2 sat2 = map_to_2SAT(pairs, n, d);
         bool satisfied = satisfiable(sat2.a, sat2.b, sat2.n, sat2.m);
         delete[] sat2.a;
         delete[] sat2.b;
         if (satisfied) return d;
-        cell = select(&implicit_matrix, 2 * n, 2 * n, rank_e + 1);
-        d = implicit_matrix(cell.i, cell.j);
+        d = select(&implicit_matrix, 2 * n, 2 * n, rank_e + 1);
         sat2 = map_to_2SAT(pairs, n, d);
         satisfied = satisfiable(sat2.a, sat2.b, sat2.n, sat2.m);
         delete[] sat2.a;
@@ -129,8 +127,7 @@ double binary_search(Pair *pairs, int n, int rank_s, int rank_e) {
         if (satisfied) return d;
         return -1;
     }
-    Cell cell = select(&implicit_matrix, 2 * n, 2 * n, rank_m + 1);
-    double d = implicit_matrix(cell.i, cell.j);
+    double d = select(&implicit_matrix, 2 * n, 2 * n, rank_m + 1);
 //    cout << d << endl;
     SAT2 sat2 = map_to_2SAT(pairs, n, d);
     bool satisfied = satisfiable(sat2.a, sat2.b, sat2.n, sat2.m);

@@ -1,8 +1,14 @@
 #include "sorted_matrix.h"
 #include <vector>
 #include <cmath>
-#include <bits/stdc++.h>
+#include  "pick.h"
 
+typedef struct Cell {
+    long i;
+    long j;
+    long w;
+    long h;
+} Cell;
 
 Cell *split_cells(Cell *cells, int n) {
     Cell *n_cells = new Cell[4 * n];
@@ -31,7 +37,7 @@ Cell *split_cells(Cell *cells, int n) {
     return n_cells;
 }
 
-Cell select(double (*matrix)(long, long), int n, int m, long k) {
+double select(double (*matrix)(long, long), int n, int m, long k) {
     double eps = 0.00001;
     long mm = pow(2, ceil(log2(m)));
     long nn = pow(2, ceil(log2(n)));
@@ -52,8 +58,8 @@ Cell select(double (*matrix)(long, long), int n, int m, long k) {
             for (long i = 0; i < cell_count; ++i) {
                 mins[i] = matrix(cells[i].i, cells[i].j);
             }
-            sort(mins, mins + cell_count);
-            double Xu = mins[q - 1];
+
+            double Xu = pick(mins, cell_count, q);
             Cell *n_cells = new Cell[q - 1];
             int idx = 0;
             for (int i = 0; i < cell_count; i++) {
@@ -77,8 +83,7 @@ Cell select(double (*matrix)(long, long), int n, int m, long k) {
             for (long i = 0; i < cell_count; ++i) {
                 maxs[i] = matrix(cells[i].i + cells[i].h - 1, cells[i].j + cells[i].w - 1);
             }
-            sort(maxs, maxs + cell_count);
-            double Xl = maxs[r - 1];
+            double Xl = pick(maxs, cell_count, r);
             Cell *n_cells = new Cell[cell_count - r];
             int idx = 0;
             for (int i = 0; i < cell_count; i++) {
@@ -100,10 +105,12 @@ Cell select(double (*matrix)(long, long), int n, int m, long k) {
             delete[]maxs;
         }
     }
-    sort(cells, cells + cell_count, [matrix](const Cell &a, const Cell &b) -> bool {
-        return matrix(a.i, a.j) < matrix(b.i, b.j);
-    });
-    Cell cell = cells[k - 1];
+    double *vals = new double[cell_count];
+    for (int i = 0; i < cell_count; ++i) {
+        vals[i] = matrix(cells[i].i, cells[i].j);
+    }
+    double result = pick(vals, cell_count, k);
+    delete[] vals;
     delete[] cells;
-    return cell;
+    return result;
 }

@@ -5,13 +5,6 @@
 
 using namespace std;
 
-typedef struct Cell {
-    long i;
-    long j;
-    long w;
-    long h;
-} Cell;
-
-Cell select(double (*matrix)(long, long), int n, int m, long k);
+double select(double (*matrix)(long, long), int n, int m, long k);
 
 #endif

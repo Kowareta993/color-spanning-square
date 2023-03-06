@@ -1,7 +1,14 @@
 #!/bin/bash
 
 make
-
+if [ ! -d "result" ]
+then
+    mkdir ./result
+fi
+if [ ! -d "analysis" ]
+then
+    mkdir ./analysis
+fi
 if [ $# -eq 0 ]
   then
     ./main    

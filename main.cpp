@@ -2,12 +2,12 @@
 #include <cstdlib>
 #include <ctime>
 #include <chrono>
-#include <fstream>
 #include <vector>
 #include <bits/stdc++.h>
 #include "SAT2.h"
 #include "square.h"
 #include "sorted_matrix.h"
+#include "pick.h"
 
 
 using namespace std;
@@ -25,6 +25,10 @@ void Select_validation(int);
 
 void Select_timing(int);
 
+void Pick_validation(int);
+
+void Pick_timing(int);
+
 Pair *randomPairs(int, int);
 
 void save(Pair *, int);
@@ -32,11 +36,13 @@ void save(Pair *, int);
 int main(int argc, char *argv[]) {
     srand(time(nullptr));
     if (argc == 1) {
+        Pick_validation(1000);
         SAT2_validation(1000);
-        SAT2_timing(10);
         Select_validation(1000);
-        Select_timing(10);
         Square_validation(1000);
+        Pick_timing(10);
+        SAT2_timing(10);
+        Select_timing(10);
         Square_timing(10);
         return 0;
     }
@@ -72,10 +78,21 @@ void save(Pair *pairs, int n) {
     stream.close();
 }
 
-int *random_arr(int size, int min, int max) {
+int *randomIntArr(int size, int min, int max) {
     int *arr = new int[size];
     for (int i = 0; i < size; ++i) {
         arr[i] = rand() % (max - min + 1) + min;
+    }
+    return arr;
+}
+
+double *randomDoubleArr(int n, double min, double max) {
+    random_device rd;
+    mt19937 e2(rd());
+    uniform_real_distribution<> dist(min, max);
+    double *arr = new double[n];
+    for (int i = 0; i < n; ++i) {
+        arr[i] = dist(e2);
     }
     return arr;
 }
@@ -88,8 +105,8 @@ void SAT2_timing(int trials) {
             long x = 0;
             for (int i = 0; i < trials; ++i) {
                 int m = n;
-                int *a = random_arr(m, -n, n);
-                int *b = random_arr(m, -n, n);
+                int *a = randomIntArr(m, -n, n);
+                int *b = randomIntArr(m, -n, n);
                 for (int j = 0; j < m; ++j) {
                     if (a[j] == 0)
                         a[j] = 1;
@@ -133,8 +150,8 @@ void SAT2_validation(int trials) {
     for (int i = 0; i < trials; ++i) {
         int n = rand() % 20 + 1;
         int m = rand() % 20 + 1;
-        int *a = random_arr(m, -n, n);
-        int *b = random_arr(m, -n, n);
+        int *a = randomIntArr(m, -n, n);
+        int *b = randomIntArr(m, -n, n);
         for (int j = 0; j < m; ++j) {
             if (a[j] == 0)
                 a[j] = 1;
@@ -200,16 +217,12 @@ Pair *randomPairs(int n, int dim) {
         pairs[k].q.p = new double[dim];
     }
     for (int j = 0; j < dim; ++j) {
-        int *a = random_arr(2 * n, -100, 100);
-        int *b = random_arr(2 * n, -100, 100);
+        double *arr = randomDoubleArr(2*n, -100, 100);
         for (int k = 0; k < n; ++k) {
-            pairs[k].p.p[j] = 1.0 * a[2 * k] / (b[2 * k] + 0.1);
-            pairs[k].q.p[j] = 1.0 * a[2 * k + 1] / (b[2 * k + 1] + 0.1);
-//            pairs[k].p.p[j] = a[k];
-//            pairs[k].q.p[j] = b[k];
+            pairs[k].p.p[j] = arr[2*k];
+            pairs[k].q.p[j] = arr[2*k + 1];
         }
-        delete[] a;
-        delete[] b;
+        delete[] arr;
     }
     return pairs;
 }
@@ -254,7 +267,7 @@ void Square_validation(int trials) {
 void Square_timing(int trials) {
     ofstream stream("analysis/Square_timing.csv");
     stream << "n,dim,t" << endl;
-    for (int t = 10; t < 1000 * 1000; t *= 10) {
+    for (int t = 10; t < 1000; t *= 10) {
         for (int n = t; n < t * 10; n += t) {
             for (int d = 1; d < 5; ++d) {
                 long x = 0;
@@ -294,7 +307,7 @@ double mat1(long i, long j) {
 void random_sorted_matrix(int n, int m) {
     matrix = new int *[n];
     for (int j = 0; j < n; ++j) {
-        matrix[j] = random_arr(m, -100, 100);
+        matrix[j] = randomIntArr(m, -100, 100);
         sort(matrix[j], matrix[j] + m);
     }
     for (int j = 0; j < m; ++j) {
@@ -318,8 +331,7 @@ void Select_validation(int trials) {
         n = rand() % 100 + 1;
         random_sorted_matrix(n, m);
         int k = rand() % (n * m);
-        Cell cell = select(&mat1, n, m, k + 1);
-        double a = mat1(cell.i, cell.j);
+        double a = select(&mat1, n, m, k + 1);
         double *mat = new double[n * m];
         for (int j = 0; j < n; ++j) {
             for (int k = 0; k < m; ++k) {
@@ -383,3 +395,48 @@ void Select_timing(int trials) {
     cout << "Select timing finished" << endl;
 }
 
+
+void Pick_validation(int trials) {
+    for (int i = 0; i < trials; ++i) {
+        int n = rand() % 1000 + 1;
+        double *arr = randomDoubleArr(n, -5, 5);
+        int k = rand() % (n);
+        double a = pick(arr, n, k + 1);
+        sort(arr, arr + n);
+        double b = arr[k];
+        if (abs(b - a) > 0.0001) {
+            cout << "Pick Validation failed" << endl;
+            cout << a << " " << b << endl;
+            cout << k << endl;
+            for (int j = 0; j < n; ++j) {
+                cout << arr[j] << " ";
+            }
+            cout << endl;
+            delete[] arr;
+            return;
+        }
+        delete[] arr;
+    }
+    cout << "Pick Validation passed" << endl;
+}
+
+void Pick_timing(int trials) {
+    ofstream stream("analysis/Pick_timing.csv");
+    stream << "n,t" << endl;
+    for (int t = 10; t < 1000 * 1000; t *= 10) {
+        for (int n = t; n < t * 10; n += t) {
+            long x = 0;
+            for (int i = 0; i < trials; ++i) {
+                int k = rand() % n + 1;
+                double *arr = randomDoubleArr(n, -100, 100);
+                auto start = high_resolution_clock::now();
+                pick(arr, n, k);
+                auto stop = high_resolution_clock::now();
+                x += duration_cast<microseconds>(stop - start).count();
+            }
+            stream << n << "," << x / trials << endl;
+        }
+    }
+    stream.close();
+    cout << "Pick timing finished" << endl;
+}

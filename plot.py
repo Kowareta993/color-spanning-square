@@ -3,6 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 try:
+    df = pd.read_csv('analysis/Pick_timing.csv')
+    plot = sns.lineplot(data=df, x='n', y='t')
+    plot.get_figure().savefig('analysis/Pick_timing.png')
+    plot.get_figure().clf()
     df = pd.read_csv('analysis/SAT2_timing.csv')
     plot = sns.lineplot(data=df, x='n', y='t')
     plot.get_figure().savefig('analysis/SAT2_timing.png')
