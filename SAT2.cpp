@@ -1,7 +1,6 @@
 #include "SAT2.h"
 #include <list>
 #include <stack>
-#include <iostream>
 
 typedef struct Node {
     int val;
