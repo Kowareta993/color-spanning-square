@@ -1,8 +1,9 @@
 # Smallest Color-Spanning Square For Pairs Of Points
+<div align="left">
 <img src="https://img.shields.io/badge/License-MIT-%23437291?logoColor=%236DB33F&color=%236DB33F"/>
 <img src="https://img.shields.io/badge/C++-3-%23437291?logo=cplusplus&logoColor=%236DB33F&color=%236DB33F"/>
 <img src="https://img.shields.io/badge/Python-3-%23437291?logo=Python&logoColor=%236DB33F&color=%236DB33F"/>
-
+</div>
 ## Description
 
 Computing the smallest color-spanning axis-parallel square for $n$ given pairs ($p_i$, $q_i$) of points where points $p_i$ and $q_i$ are colored with color $i$. 
